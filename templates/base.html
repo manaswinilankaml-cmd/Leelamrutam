@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leelamrutam</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Georgia&family=Bilbo+Swash+Caps&family=Caveat+Brush&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/">Leelamrutam</a>
+        </div>
+        <div class="nav-links">
+            <a href="/shiva">Shiva</a>
+            <a href="/shakti">Shakti</a>
+            <a href="/krishna">Krishna</a>
+            <a href="/our_space">Our Space</a>
+        </div>
+        <div class="nav-actions">
+            <form action="/search" method="GET" class="search-form">
+                <input type="text" name="q" placeholder="Search stories...">
+                <button type="submit">🔍</button>
+            </form>
+            {% if session.get('logged_in') %}
+                <span class="user-badge">{{ session.username }}</span>
+                <a href="/logout" class="btn-login">Logout</a>
+            {% else %}
+                <a href="/login" class="btn-login">Login</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>A sacred space to preserve divine stories ✨</p>
+    </footer>
+</body>
+</html>

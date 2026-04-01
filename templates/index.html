@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+/* Exact replication of the front page design */
+body {
+    background-color: #fceec5; /* Beige background from image */
+    background-image: none; /* remove normal app gradient */
+}
+.navbar {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+main {
+    padding: 0;
+    position: relative;
+    max-width: none;
+}
+.hero {
+    text-align: center;
+    margin-top: 50px;
+    margin-bottom: 50px;
+}
+.hero h1 {
+    font-family: 'Bilbo Swash Caps', cursive;
+    font-size: 80px;
+    color: #000;
+    margin: 0;
+    font-weight: normal;
+}
+
+.front-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.front-grid .section-card {
+    background: transparent !important;
+    border: 2px solid #333;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 40px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-decoration: none;
+    transition: background 0.3s;
+}
+
+.front-grid .section-card:hover {
+    background: rgba(0,0,0,0.05) !important;
+    transform: none;
+}
+
+.front-grid .section-card h2 {
+    font-family: 'Caveat Brush', cursive;
+    font-size: 36px;
+    color: #333 !important;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+</style>
+
+<div class="hero">
+    <h1>Leelamrutam</h1>
+</div>
+
+<div class="front-grid">
+    <a href="/shiva" class="section-card">
+        <h2>SHIVA</h2>
+    </a>
+    <a href="/shakti" class="section-card">
+        <h2>SHAKTI</h2>
+    </a>
+    <a href="/krishna" class="section-card">
+        <h2>KRISHNA</h2>
+    </a>
+    <a href="/our_space" class="section-card">
+        <h2>OUR SPACE</h2>
+    </a>
+</div>
+{% endblock %}

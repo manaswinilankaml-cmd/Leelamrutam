@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="story-reader">
+    <div class="story-content-box window-glass">
+        <h1>{{ story.title }}</h1>
+        <div class="story-meta">
+            <span>✍️ Written by <strong>{{ story.author }}</strong></span>
+            <span>📅 {{ story.date }}</span>
+        </div>
+        
+        <hr class="divider">
+        
+        <div class="content body-text">
+            {{ story.content }}
+        </div>
+        
+        <a class="btn btn-back" href="/{{ section }}">⬅ Back to {{ section.replace('_', ' ').title() }}</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="search-page">
+    <h2>Search Results for "{{ query }}"</h2>
+    
+    {% if results %}
+    <div class="story-grid">
+        {% for story in results %}
+        <div class="story-card theme-{{ story.section_id.replace('_', '-') }}">
+            <span class="section-badge">{{ story.section_id.title().replace('_', ' ') }}</span>
+            <h3>{{ story.title }}</h3>
+            <p class="meta">By {{ story.author }} | {{ story.date }}</p>
+            
+            <div class="card-actions">
+                <a href="/story/{{ story.section_id }}/{{ story.filename }}" class="btn btn-read">Read</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty-state">No matching stories found. Try another search term!</p>
+    {% endif %}
+</div>
+{% endblock %}

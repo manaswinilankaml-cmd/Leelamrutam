@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="section-header theme-{{ section_id.replace('_', '-') }}">
+    <h1>{{ section }} Stories</h1>
+    {% if session.get('logged_in') %}
+    <a href="/new_story" class="btn btn-primary">Write a Story ✍️</a>
+    {% endif %}
+</div>
+
+<div class="story-grid">
+    {% for story in stories %}
+    <div class="story-card">
+        <h3>{{ story.title }}</h3>
+        <p class="meta">By {{ story.author }} | {{ story.date }}</p>
+        
+        <div class="card-actions">
+            <a href="/story/{{ section_id }}/{{ story.filename }}" class="btn btn-read">Read</a>
+            
+            {% if session.get('logged_in') %}
+            <a href="/delete/{{ section_id }}/{{ story.filename }}" class="btn btn-delete" onclick="return confirm('Archive this story?')">
+                Delete 🗑
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <p class="empty-state">No stories found in this section yet.</p>
+    {% endfor %}
+</div>
+{% endblock %}
