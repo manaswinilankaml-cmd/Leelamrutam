@@ -11,15 +11,15 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = "super_secret_leelamrutam_key"
 
-# ✅ FIXED DATABASE CONFIG (IMPORTANT)
+# ✅ FIXED DATABASE CONFIG (SAFE VERSION)
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL is not set! Check Render environment variables.")
-
-# Fix for old postgres:// format
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+if DATABASE_URL:
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+else:
+    print("WARNING: DATABASE_URL not found, using SQLite temporarily")
+    DATABASE_URL = "sqlite:///leelamrutam.db"
 
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
