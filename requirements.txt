@@ -8,3 +8,7 @@ MarkupSafe==3.0.3
 setuptools==57.4.0
 Werkzeug==3.1.6
 gunicorn==21.2.0
+Flask-SQLAlchemy==3.1.1
+pymysql==1.1.0
+# psycopg2-binary==2.9.9 (Uncomment when deploying to Render PostgreSQL)
+python-dotenv==1.0.1

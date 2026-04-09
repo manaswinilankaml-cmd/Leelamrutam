@@ -3,15 +3,46 @@ import json
 from datetime import datetime
 from functools import wraps
 from flask import Flask, render_template, request, session, redirect, url_for, flash
+from flask_sqlalchemy import SQLAlchemy
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = "super_secret_leelamrutam_key"
 
+# ✅ FIXED DATABASE CONFIG (IMPORTANT)
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL is not set! Check Render environment variables.")
+
+# Fix for old postgres:// format
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+# ------------------ MODEL ------------------
+class Story(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    author = db.Column(db.String(100), nullable=False)
+    date = db.Column(db.String(50), nullable=False)
+    section = db.Column(db.String(50), nullable=False)
+    filename = db.Column(db.String(250), nullable=False)
+
+# ------------------ USERS ------------------
 USERS = {
     "manaswini": "spiritual",
     "harshini": "devotion"
 }
 
+# ------------------ AUTH ------------------
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -21,30 +52,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-def get_story_metadata(section, filename):
-    filepath = os.path.join("stories", section, filename)
-    if not os.path.exists(filepath):
-        return None
-    if filename.endswith(".json"):
-        with open(filepath, "r", encoding="utf-8") as f:
-            try:
-                data = json.load(f)
-                data["filename"] = filename
-                return data
-            except json.JSONDecodeError:
-                return None
-    elif filename.endswith(".txt"):
-        with open(filepath, "r", encoding="utf-8") as f:
-            content = f.read()
-            return {
-                "title": filename.replace(".txt", ""),
-                "content": content,
-                "author": "Legacy Writer",
-                "date": "Unknown Date",
-                "filename": filename
-            }
-    return None
-
+# ------------------ ROUTES ------------------
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -54,6 +62,7 @@ def login():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
+
         if username in USERS and USERS[username] == password:
             session['logged_in'] = True
             session['username'] = username
@@ -61,6 +70,7 @@ def login():
             return redirect(url_for('home'))
         else:
             flash("Invalid credentials. Try again.", "error")
+
     return render_template("login.html")
 
 @app.route("/logout")
@@ -72,20 +82,23 @@ def logout():
 @app.route("/<section>")
 def section_view(section):
     valid_sections = ["shiva", "shakti", "krishna", "our_space"]
+
     if section not in valid_sections:
         return redirect(url_for('home'))
-        
-    story_folder = os.path.join("stories", section)
-    # create folder if it doesnt exist
-    os.makedirs(story_folder, exist_ok=True)
-    
-    files = os.listdir(story_folder)
+
     stories_data = []
-    for f in files:
-        data = get_story_metadata(section, f)
-        if data:
-            stories_data.append(data)
-            
+    stories = Story.query.filter_by(section=section).all()
+
+    for s in stories:
+        stories_data.append({
+            "title": s.title,
+            "content": s.content,
+            "author": s.author,
+            "date": s.date,
+            "filename": s.filename,
+            "section_id": s.section
+        })
+
     section_title = section.replace("_", " ").title()
     return render_template("section.html", stories=stories_data, section=section_title, section_id=section)
 
@@ -96,74 +109,94 @@ def new_story():
         title = request.form["title"].strip()
         content = request.form["content"].strip()
         section = request.form["section"]
-        
+
         if not title or not content:
             flash("Title and content cannot be empty", "error")
             return render_template("new_story.html")
-            
+
         author = session.get('username', 'Unknown')
         date_str = datetime.now().strftime("%B %d, %Y")
-        
-        filename_safe = "".join([c for c in title if c.isalpha() or c.isdigit() or c==' ']).rstrip().replace(" ", "_")
+
+        filename_safe = "".join([c for c in title if c.isalnum() or c == ' ']).rstrip().replace(" ", "_")
         filename = f"{filename_safe}.json"
-        
-        filepath = os.path.join("stories", section, filename)
-        
-        story_data = {
-            "title": title,
-            "content": content,
-            "author": author,
-            "date": date_str
-        }
-        
-        os.makedirs(os.path.join("stories", section), exist_ok=True)
-        with open(filepath, "w", encoding="utf-8") as file:
-            json.dump(story_data, file, indent=4)
-            
+
+        new_story = Story(
+            title=title,
+            content=content,
+            author=author,
+            date=date_str,
+            section=section,
+            filename=filename
+        )
+
+        db.session.add(new_story)
+        db.session.commit()
+
         flash(f"Story '{title}' saved successfully 🌸", "success")
         return redirect(url_for('section_view', section=section))
-        
+
     return render_template("new_story.html")
 
 @app.route("/story/<section>/<filename>")
 def read_story(section, filename):
-    data = get_story_metadata(section, filename)
-    if not data:
+    story = Story.query.filter_by(section=section, filename=filename).first()
+
+    if not story:
         flash("Story not found", "error")
         return redirect(url_for('home'))
-        
+
+    data = {
+        "title": story.title,
+        "content": story.content,
+        "author": story.author,
+        "date": story.date,
+        "filename": story.filename
+    }
+
     return render_template("story.html", story=data, section=section)
 
 @app.route("/delete/<section>/<filename>")
 @login_required
 def delete_story(section, filename):
-    filepath = os.path.join("stories", section, filename)
-    if os.path.exists(filepath):
-        os.remove(filepath)
+    story = Story.query.filter_by(section=section, filename=filename).first()
+
+    if story:
+        db.session.delete(story)
+        db.session.commit()
         flash(f"Story deleted successfully 🌸", "success")
     else:
-        flash("File not found", "error")
+        flash("Story not found", "error")
+
     return redirect(url_for('section_view', section=section))
 
 @app.route("/search")
 def search():
     query = request.args.get('q', '').lower()
     results = []
-    
+
     if query:
-        sections = ["shiva", "shakti", "krishna", "our_space"]
-        for section in sections:
-            folder = os.path.join("stories", section)
-            if not os.path.exists(folder):
-                continue
-            for f in os.listdir(folder):
-                data = get_story_metadata(section, f)
-                if data:
-                    if query in data['title'].lower() or query in data['content'].lower():
-                        data['section_id'] = section
-                        results.append(data)
-                        
+        search_filter = f"%{query}%"
+        stories = Story.query.filter(
+            (Story.title.ilike(search_filter)) |
+            (Story.content.ilike(search_filter))
+        ).all()
+
+        for s in stories:
+            results.append({
+                "title": s.title,
+                "content": s.content,
+                "author": s.author,
+                "date": s.date,
+                "filename": s.filename,
+                "section_id": s.section
+            })
+
     return render_template("search.html", results=results, query=query)
 
+# ------------------ INIT DB ------------------
+with app.app_context():
+    db.create_all()
+
+# ------------------ RUN ------------------
 if __name__ == "__main__":
     app.run(debug=True)
